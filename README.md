@@ -1,9 +1,7 @@
-# helloworld
+# astrbot_plugin_wordle
 
-AstrBot 插件模板
+Astrbot wordle游戏，支持指定位数
 
-A template plugin for AstrBot plugin feature
+如需替换词表，请替换插件根目录下的wordlist.txt
 
-# 支持
-
-[帮助文档](https://astrbot.app)
+内置词表来自KyleBing[english-vocabulary](https://github.com/KyleBing/english-vocabulary)
