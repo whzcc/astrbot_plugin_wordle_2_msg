@@ -1,6 +1,6 @@
 name: astrbot_plugin_wordle
-desc: Astrbot wordle游戏，支持指定位数
+desc: Astrbot wordle游戏，支持指定位数，加入了单词拼写检查（通过spellchecker库和自定词库之一即可）、自定义词库、释义功能（写在插件目录的wordlist文件夹下的json文件）
 help: 输入 /wordle 查看帮助
 version: v1.0.0
-author: Raven95676
-repo: https://github.com/Raven95676/astrbot_plugin_wordle
+author: Raven95676, whzc
+repo: https://github.com/whzcc/astrbot_plugin_wordle
