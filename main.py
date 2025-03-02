@@ -1,5 +1,6 @@
 import os
 import random
+import json
 from io import BytesIO
 
 from PIL import Image as ImageW
@@ -9,6 +10,14 @@ from astrbot.api.all import *  # noqa: F403
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 
+try:
+    os.system("pip install pyspellchecker")
+    logger.log("Wordle已尝试安装pyspellchecker库")
+except:
+    logger.warning("Wordle未自动安装pyspellchecker库")
+    logger.warning("这可能导致拼写检查的失败，请手动在AstrBot目录中requirements.txt添加一行“pyspellchecker”")
+
+from spellchecker import SpellChecker
 
 class WordleGame:
     def __init__(self, answer: str):
@@ -17,7 +26,11 @@ class WordleGame:
         self.max_attempts = self.length + 1
         self.guesses: list[str] = []
         self.feedbacks: list[list[int]] = []
-        self._font = ImageFont.load_default()
+
+        self.plugin_dir = os.path.dirname(os.path.abspath(__file__))  # 获取当前文件所在目录
+        self.font_file = os.path.join(self.plugin_dir, "MinecraftAE.ttf")   # 这里可以修改字体为自定义字体
+
+        self._font = ImageFont.truetype(self.font_file, 40)  #设定字体、字号、字重
 
     async def gen_image(self) -> bytes:
         CELL_COLORS = {
@@ -63,8 +76,8 @@ class WordleGame:
                     text_width = text_bbox[2] - text_bbox[0]
                     text_height = text_bbox[3] - text_bbox[1]
 
-                    letter_x = x + (CELL_SIZE - text_width) // 2
-                    letter_y = y + (CELL_SIZE - text_height) // 2
+                    letter_x = x + (CELL_SIZE - text_width) // 2 + 2
+                    letter_y = y + (CELL_SIZE - text_height) // 2 + 1
 
                     draw.text((letter_x, letter_y), letter, fill=TEXT_COLOR, font=self._font)
 
@@ -124,26 +137,35 @@ class PluginWordle(Star):
     async def get_answer(length):
         try:
             wordlist_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "wordlist.txt"
+                os.path.dirname(os.path.abspath(__file__)), "wordlist"
             )
 
             if not os.path.exists(wordlist_path):
                 logger.error("词表文件不存在")
                 return None
 
-            with open(wordlist_path, "r", encoding="utf-8") as file:
-                content = file.read()
-                words = content.split()
-                filtered_words = [
-                    word.strip().upper()
-                    for word in words
-                    if len(word.strip()) == length
-                ]
+            # 获取单词文件
+            word_file_list = os.listdir(wordlist_path)
+            global word_dict
+            word_dict = {}
+            # 遍历单词表，并用字典接收内容
+            for word_file in word_file_list:
+                with open(os.path.join(wordlist_path,word_file),"r",encoding="utf-8") as f:
+                    word_dict.update(json.load(f)) 
+                    # 只保留长度为length的单词
+                    for word in list(word_dict.keys()):
+                        if len(word) != length:
+                            del word_dict[word]
 
-                if not filtered_words:
-                    return None
+            # 随机选一个单词
+            word = random.choice(list(word_dict.keys()))
+            global explanation
+            explanation = word_dict[word]["中释"]
 
-                return random.choice(filtered_words).upper()
+            logger.info(f"选择了{word}单词，长度{length}，释义为{explanation}")
+
+            return word.upper()
+        
         except Exception as e:
             logger.error(f"加载词表失败: {e!s}")
             return None
@@ -207,6 +229,15 @@ class PluginWordle(Star):
                 yield event.plain_result(f"输入单词长度应该为{length}")
                 return
             
+            # 单词拼写检查
+            spellcheck = SpellChecker()
+            if not (
+                msg in list(word_dict.keys())
+                or spellcheck.known((msg,))
+                ):   
+                yield event.plain_result(f"请输入拼写正确的单词")
+                return
+
             if not msg.isalpha():
                 yield event.plain_result("输入应该是英文")
                 return
@@ -215,10 +246,10 @@ class PluginWordle(Star):
 
             if game.is_won:
                 sender_info = event.get_sender_name() if event.get_sender_name() else event.get_sender_id()
-                game_status = f"恭喜{sender_info}猜对了！正确答案是: {game.answer}"
+                game_status = f"恭喜{sender_info}猜对了！正确答案是“{game.answer}”，意思是“{explanation}”"
                 del self.game_sessions[session_id]
             elif game.is_game_over:
-                game_status = f"游戏结束。正确答案是: {game.answer}"
+                game_status = f"游戏结束。正确答案是“{game.answer}”,意思是“{explanation}”"
                 del self.game_sessions[session_id]
             else:
                 game_status = f"已猜测 {len(game.guesses)}/{game.max_attempts} 次"
