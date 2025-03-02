@@ -15,7 +15,7 @@ try:
     logger.log("Wordle已尝试安装pyspellchecker库")
 except:
     logger.warning("Wordle未自动安装pyspellchecker库")
-    logger.warning("这可能导致拼写检查的失败，请手动在AstrBot目录中requirements.txt添加一行“pyspellchecker”")
+    logger.warning("这可能导致拼写检查的失败，请手动在AstrBot目录中requirements.txt添加一行“pyspellchecker”，如已安装请忽略")
 
 from spellchecker import SpellChecker
 
