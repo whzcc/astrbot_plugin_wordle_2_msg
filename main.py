@@ -194,13 +194,10 @@ class WordleGame:
     
     async def hint(self) -> bytes:   # 原理和guess()相同，但本函数无需传参
         for i in range(len(self.answer)):
-            if self.answer[i] in self.history_letters:
-                guessed_correct_letters = True
-            else:
-                guessed_correct_letters = False
-        if not guessed_correct_letters:
-            logger.warning("用户还未猜出任何一个正确的字母。")
-            return False
+            if not self.answer[i] in self.history_letters:
+                logger.warning("用户还未猜出任何一个正确的字母。")
+                return False
+
         else:
             logger.critical("hint()被调用")
             # 组建“提示”的单词，未猜出的字母用空格代替
