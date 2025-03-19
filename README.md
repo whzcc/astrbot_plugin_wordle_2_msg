@@ -19,7 +19,7 @@ Astrbot wordle游戏，支持指定位数——只需要单词表中存在该长
 > [!caution]
 > 这个版本识别的不是指令，而是普通的对话。也就是说，你应该在移除指令前缀“/”。
 > 识别的对话内容有：
-> ```plain
+> ```
 > /猜单词
 > 猜单词提示
 > 猜单词结束
@@ -38,7 +38,7 @@ Astrbot wordle游戏，支持指定位数——只需要单词表中存在该长
 > Image.fromBytes(image_result_hint),
 > ```
 > 
-> 第487行改为
+> 第486行改为
 > 
 > ```python
 > Image.fromBytes(image_result),
