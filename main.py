@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image as ImageW
 from PIL import ImageDraw, ImageFont
 
-from astrbot.api.all import *  # noqa: F403
+from astrbot.api.all import *
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 
@@ -128,8 +128,6 @@ class WordleGame:
             for col in range(self.length):
                 x = GRID_MARGIN + col * cell_stride
 
-                logger.fatal(hint_word)
-
                 if word[col] == " ":
                     cell_color = CELL_COLORS[-1]
                 else:
@@ -211,7 +209,6 @@ class WordleGame:
                 else:
                     hint_word = hint_word + " "
             hint_word = hint_word.upper()
-            logger.fatal(hint_word)
 
             # 废弃，我不需要（
             # feedback = [0] * self.length
@@ -332,6 +329,7 @@ class PluginWordle(Star):
         {"footer_image": picture_url})
                 
                 chain = [
+                    # Image.fromBytes(image_result_hint),
                     Image.fromURL(url),
                     Plain("这是你已经猜出的字母。")
                 ]
@@ -473,7 +471,6 @@ class PluginWordle(Star):
                 game_status = f"已猜测 {len(game.guesses)}/{game.max_attempts} 次。"
                 logger.info(f"已猜测 {len(game.guesses)}/{game.max_attempts} 次。")
 
-
             # 将二进制数据编码为Base64字符串
             base64_encoded_data = base64.b64encode(image_result)
 
@@ -485,9 +482,9 @@ class PluginWordle(Star):
             print(url)
             
             chain = [
-                # Image.fromBytes(image_result),  # noqa: F405
+                # Image.fromBytes(image_result),
                 Image.fromURL(url),
-                Plain(game_status),  # noqa: F405
+                Plain(game_status),
             ]
 
             yield event.chain_result(chain)
