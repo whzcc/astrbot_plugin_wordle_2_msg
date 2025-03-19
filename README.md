@@ -1,4 +1,4 @@
-# astrbot_plugin_wordle
+# astrbot_plugin_wordle_2
 
 Forked from [astrbot_plugin_wordle](https://github.com/Raven95676/astrbot_plugin_wordle)
 
