@@ -1,7 +1,6 @@
 import os
 import random
 import json
-import base64
 from io import BytesIO
 
 from PIL import Image as ImageW     # 防止与"Image"发生冲突
@@ -10,17 +9,6 @@ from PIL import ImageDraw, ImageFont
 from astrbot.api.all import *
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-
-TMPL = '''
-<div style="width: 100%; line-height: 0; padding-top: 20px;">
-<img src="{{ footer_image }}"
-     style="display: block;
-            width: 100%;
-            height: auto;
-            object-fit: contain;"
-     alt="自适应插图">
-</div>
-'''
 
 try:
     os.system("pip install pyspellchecker")
@@ -286,11 +274,13 @@ class PluginWordle(Star):
         if "猜单词结束" in msg:
             """中止Wordle游戏"""
             session_id = event.unified_msg_origin
-            if session_id in self.game_sessions:
-                del self.game_sessions[session_id]
-                yield event.plain_result("猜单词已结束。")
-            else:
+            if session_id not in self.game_sessions:
                 yield event.plain_result("游戏还没开始，输入“/猜单词”来开始游戏吧！")
+                return
+            if session_id in self.game_sessions:
+                game = self.game_sessions[session_id]
+                yield event.plain_result(f"猜单词已结束，正确答案是{game.answer}")
+                del self.game_sessions[session_id]
 
         if "猜单词提示" in msg:
             session_id = event.unified_msg_origin
