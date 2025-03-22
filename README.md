@@ -2,6 +2,22 @@
 
 Forked from [astrbot_plugin_wordle](https://github.com/Raven95676/astrbot_plugin_wordle)
 
+> [!caution]
+> 这个版本识别的不是指令，而是普通的对话。也就是说，你应该在移除指令前缀“/”。
+> 
+> 猜单词时，直接对bot说出单词即可。
+> 
+> 识别的对话内容有：
+> ```
+> /猜单词
+> ```
+> ```
+> 猜单词提示
+> ```
+> ```
+> 猜单词结束
+> ```
+
 Astrbot wordle游戏，支持指定位数——只需要单词表中存在该长度的单词。
 
 **自定义词库和释义功能**。（修改在```/wordlist```目录下的json文件。这里使用了[nonebot-plugin-wordle](https://github.com/noneplugin/nonebot-plugin-wordle)的单词表。）
@@ -17,17 +33,3 @@ Astrbot wordle游戏，支持指定位数——只需要单词表中存在该长
 优化了一些细节。
 
 启动时，插件会自动尝试安装“pyspellchecker”库，但建议手动在AstrBot目录中requirements.txt添加一行“pyspellchecker”
-
-> [!important]
-> 这个版本识别的不是指令，而是普通的对话。也就是说，你应该在移除指令前缀“/”。
-> 猜单词时，直接对bot说出单词即可。
-> 识别的对话内容有：
-> ```
-> /猜单词
-> ```
-> ```
-> 猜单词提示
-> ```
-> ```
-> 猜单词结束
-> ```
