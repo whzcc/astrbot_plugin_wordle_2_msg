@@ -4,7 +4,7 @@ import json
 import base64
 from io import BytesIO
 
-from PIL import Image as ImageW
+from PIL import Image as ImageW     # 防止与"Image"发生冲突
 from PIL import ImageDraw, ImageFont
 
 from astrbot.api.all import *
@@ -123,8 +123,6 @@ class WordleGame:
         for row in range(1):
             y = GRID_MARGIN + row * cell_stride
 
-            hint_word = [word]
-
             for col in range(self.length):
                 x = GRID_MARGIN + col * cell_stride
 
@@ -151,23 +149,27 @@ class WordleGame:
             image.save(output, format="PNG")
             return output.getvalue()
 
-    # 未完工
-    async def is_guessed(self, word: str) -> bool:
-        if word in self.history_words:
-            logger.info(f"is_guessed()函数:历史猜测的单词重复，未更新历史单词列表。")
-            return True
-        else:
-            self.history_words.append(word)
-            logger.info(f"is_guessed()函数:历史猜测的单词更新为{self.history_words}。")
-            return False
+    # # 未完工
+    # async def is_guessed(self, word: str) -> bool:
+    #     if word in self.history_words:
+    #         logger.info(f"is_guessed()函数:历史猜测的单词重复，未更新历史单词列表。")
+    #         return True
+    #     else:
+    #         self.history_words.append(word)
+    #         logger.info(f"is_guessed()函数:历史猜测的单词更新为{self.history_words}。")
+    #         return False
 
     async def guess(self, word: str) -> bytes:
         word = word.upper()
         self.guesses.append(word)
-        for i in range(len(word)):
-            self.history_letters.append(word[i])
         
-        logger.info(f"guess()函数:历史猜测的字母表更新为{self.history_letters}。")
+        for i in range(len(word)):
+            # 比如，历史字母表为["a","r","r","r"]（有3个r），此时用户输入refer（有2个r），历史字母表就不会再添加r了
+            # 而如果，历史字母表为["a","r"]（有1个r），此时用户输入refer（有2个r），历史字母表也会变成2个r
+            if word.count(word[i]) > self.history_letters.count(word[i]):
+                self.history_letters.append(word[i])
+        
+        logger.info(f"guess():历史猜测的字母表更新为{self.history_letters}。")
 
         feedback = [0] * self.length
         answer_char_counts: dict[str, int] = {}
@@ -200,34 +202,18 @@ class WordleGame:
             return False
 
         else:
-            logger.critical("hint()被调用")
             # 组建“提示”的单词，未猜出的字母用空格代替
             hint_word = ""
+            tem = self.history_letters
             for i in range(len(self.answer)):
-                if self.answer[i] in self.history_letters:
+                if self.answer[i] in tem:
                     hint_word = hint_word + self.answer[i]
+                    tem.remove(self.answer[i])  # 举个例子，这是为了避免出现这样一种情况：历史字母表只有一个“r”字母，但提示的单词却给出了更多“r”
                 else:
                     hint_word = hint_word + " "
             hint_word = hint_word.upper()
-
-            # 废弃，我不需要（
-            # feedback = [0] * self.length
-            # answer_char_counts: dict[str, int] = {}
             
-            # for i in range(self.length):
-            #     if word[i] == self.answer[i]:
-            #         feedback[i] = 2
-            #     else:
-            #         answer_char_counts[self.answer[i]] = answer_char_counts.get(self.answer[i], 0) + 1
-            
-            # for i in range(self.length):
-            #     if feedback[i] != 2:
-            #         char = word[i]
-            #         if char in answer_char_counts and answer_char_counts[char] > 0:
-            #             feedback[i] = 1
-            #             answer_char_counts[char] -= 1
-            
-            # self.feedbacks.append(feedback)
+            # 将组建的“提示”单词生成图片
             result = await self.gen_image_hint(hint_word)
 
             return result
@@ -244,11 +230,11 @@ class WordleGame:
 
 
 @register(
-    "astrbot_plugin_wordle_2",
-    "Raven95676, whzc",
-    "原插件的基础上进行了升级。Astrbot wordle游戏，支持指定位数",
+    "astrbot_plugin_wordle",
+    "Raven95676",
+    "Astrbot wordle游戏，支持指定位数",
     "2.0.0",
-    "https://github.com/Raven95676/astrbot_plugin_wordle_2",
+    "https://github.com/Raven95676/astrbot_plugin_wordle",
 )
 class PluginWordle(Star):
     def __init__(self, context: Context):
@@ -295,11 +281,7 @@ class PluginWordle(Star):
     @event_message_type(EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
         msg = event.get_message_str()
-        try:
-            msg = msg.lower()
-            logger.info(f"用户输入（已转为小写）：{msg}")
-        except:
-            logger.info(f"用户输入（未转为小写）：{msg}")
+        msg = msg.lower()
         
         if "猜单词结束" in msg:
             """中止Wordle游戏"""
@@ -321,19 +303,33 @@ class PluginWordle(Star):
 
             if not image_result_hint == False:  # 当用户猜出来过正确的字母时，给出图片形式的提示
                 
-                # 将二进制数据编码为Base64字符串
-                base64_encoded_data = base64.b64encode(image_result_hint)
-                # 创建一个可以直接在HTML中使用的Data URL：
-                picture_url = 'data:image/png;base64,' + base64_encoded_data.decode('utf-8')
-                url = await self.html_render(TMPL,
-        {"footer_image": picture_url})
-                
+                # 保证兼容性（从原作者那偷的），将png转为jpg
+                tem_id = session_id.replace(":","") # 删掉文件系统不兼容的符号
+                img_path_png = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    f"{tem_id}_{len(game.guesses)}_wordle_hint.png",
+                )
+                img_path_jpg = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    f"{tem_id}_{len(game.guesses)}_wordle_hint.jpg",
+                )
+
+                with open(img_path_png, "wb") as f:
+                    f.write(image_result_hint)
+
+                im = ImageW.open(img_path_png)
+                im = im.convert('RGB')
+                im.save(img_path_jpg, quality=95)
+
                 chain = [
-                    # Image.fromBytes(image_result_hint),
-                    Image.fromURL(url),
+                    Image.fromFileSystem(img_path_jpg),
                     Plain("这是你已经猜出的字母。")
                 ]
                 yield event.chain_result(chain)
+
+                os.remove(img_path_png)
+                os.remove(img_path_jpg)
+
             else:   # 当用户一个字母都没有猜出来过时，给出文本形式的提示
                 i = random.randint(0,len(game.answer)-1)
                 hint = f"提示：第{i+1}个字母是 {game.answer[i]}。"
@@ -352,6 +348,7 @@ class PluginWordle(Star):
                 except:
                     length = 5
                     user_length_ok = False
+
             """开始Wordle游戏"""
             answer = await self.get_answer(length)
             session_id = event.unified_msg_origin
@@ -470,23 +467,30 @@ class PluginWordle(Star):
             else:
                 game_status = f"已猜测 {len(game.guesses)}/{game.max_attempts} 次。"
                 logger.info(f"已猜测 {len(game.guesses)}/{game.max_attempts} 次。")
-
-            # 将二进制数据编码为Base64字符串
-            base64_encoded_data = base64.b64encode(image_result)
-
-            # 创建一个可以直接在HTML中使用的Data URL：
-            picture_url = 'data:image/png;base64,' + base64_encoded_data.decode('utf-8')
-
-            url = await self.html_render(TMPL,
-    {"footer_image": picture_url})
-            print(url)
             
+            # 保证兼容性（从原作者那偷的），将png转为jpg
+            tem_id = session_id.replace(":","") # 删掉文件系统不兼容的符号
+            img_path_png = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                f"{tem_id}_{len(game.guesses)}_wordle.png",
+            )
+            img_path_jpg = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                f"{tem_id}_{len(game.guesses)}_wordle.jpg",
+            )
+
+            with open(img_path_png, "wb") as f:
+                f.write(image_result)
+
+            im = ImageW.open(img_path_png)
+            im = im.convert('RGB')
+            im.save(img_path_jpg, quality=95)
             chain = [
-                # Image.fromBytes(image_result),
-                Image.fromURL(url),
+                Image.fromFileSystem(img_path_jpg),
                 Plain(game_status),
             ]
 
             yield event.chain_result(chain)
 
-            # yield event.image_result(url)
+            os.remove(img_path_png)
+            os.remove(img_path_jpg)
