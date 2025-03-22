@@ -279,7 +279,7 @@ class PluginWordle(Star):
                 return
             if session_id in self.game_sessions:
                 game = self.game_sessions[session_id]
-                yield event.plain_result(f"猜单词已结束，正确答案是{game.answer}")
+                yield event.plain_result(f"猜单词已结束，正确答案是{game.answer}。")
                 del self.game_sessions[session_id]
 
         if "猜单词提示" in msg:
