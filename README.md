@@ -3,7 +3,7 @@
 Forked from [astrbot_plugin_wordle](https://github.com/Raven95676/astrbot_plugin_wordle)
 
 > [!caution]
-> 这个版本识别的不是指令，而是普通的对话。也就是说，你应该在移除指令前缀“/”。
+> 这个版本识别的不是指令，而是普通的对话。也就是说，你应该在配置AstrBot时，移除指令前缀“/”。
 > 
 > 猜单词时，直接对bot说出单词即可。
 > 
