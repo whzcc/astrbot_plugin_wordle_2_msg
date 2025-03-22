@@ -233,7 +233,7 @@ class WordleGame:
     "astrbot_plugin_wordle",
     "Raven95676",
     "Astrbot wordle游戏，支持指定位数",
-    "2.0.0",
+    "2.1.0",
     "https://github.com/Raven95676/astrbot_plugin_wordle",
 )
 class PluginWordle(Star):
