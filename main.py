@@ -137,26 +137,26 @@ class WordleGame:
             image.save(output, format="PNG")
             return output.getvalue()
 
-    # # 未完工
-    # async def is_guessed(self, word: str) -> bool:
-    #     if word in self.history_words:
-    #         logger.info(f"is_guessed()函数:历史猜测的单词重复，未更新历史单词列表。")
-    #         return True
-    #     else:
-    #         self.history_words.append(word)
-    #         logger.info(f"is_guessed()函数:历史猜测的单词更新为{self.history_words}。")
-    #         return False
+    async def is_guessed(self, word: str) -> bool:
+        word = word.upper()
+        if word in self.history_words:
+            logger.info(f"{word}这个单词已经猜过了。")
+            return True
+        else:
+            self.history_words.append(word)
+            logger.info(f"is_guessed():历史猜测的单词表更新为{self.history_words}")
+            return False
 
     async def guess(self, word: str) -> bytes:
         word = word.upper()
         self.guesses.append(word)
-        
+
         for i in range(len(word)):
             # 比如，历史字母表为["a","r","r","r"]（有3个r），此时用户输入refer（有2个r），历史字母表就不会再添加r了
             # 而如果，历史字母表为["a","r"]（有1个r），此时用户输入refer（有2个r），历史字母表也会变成2个r
             if word.count(word[i]) > self.history_letters.count(word[i]):
                 self.history_letters.append(word[i])
-        
+
         logger.info(f"guess():历史猜测的字母表更新为{self.history_letters}。")
 
         feedback = [0] * self.length
@@ -192,11 +192,11 @@ class WordleGame:
         else:
             # 组建“提示”的单词，未猜出的字母用空格代替
             hint_word = ""
-            tem = self.history_letters
+            tem1 = self.history_letters.copy()  # 这里使用copy()是因为：在 Python 中，当你执行 tem1 = self.history_letters 时，tem1 并没有创建一个新的独立对象，而是指向了与 self.history_letters 相同的对象（即它们共享同一块内存地址）。此时，如果 self.history_letters 是可变对象（如列表、字典、集合等），修改 tem1 的内容会导致 self.history_letters 同步变化，因为二者本质上是同一个对象的不同引用。
             for i in range(len(self.answer)):
-                if self.answer[i] in tem:
+                if self.answer[i] in tem1:
                     hint_word = hint_word + self.answer[i]
-                    tem.remove(self.answer[i])  # 举个例子，这是为了避免出现这样一种情况：历史字母表只有一个“r”字母，但提示的单词却给出了更多“r”
+                    tem1.remove(self.answer[i])  # 举个例子，这是为了避免出现这样一种情况：历史字母表只有一个“r”字母，但提示的单词却给出了更多“r”
                 else:
                     hint_word = hint_word + " "
             hint_word = hint_word.upper()
@@ -218,11 +218,11 @@ class WordleGame:
 
 
 @register(
-    "astrbot_plugin_wordle",
-    "Raven95676",
-    "Astrbot wordle游戏，支持指定位数",
-    "2.1.0",
-    "https://github.com/Raven95676/astrbot_plugin_wordle",
+    "astrbot_plugin_wordle_2_msg",
+    "Raven95676, whzc",
+    "Wordle游戏（响应消息内容版），支持指定位数",
+    "2.1.1",
+    "https://github.com/whzcc/astrbot_plugin_wordle_2_msg",
 )
 class PluginWordle(Star):
     def __init__(self, context: Context):
@@ -270,8 +270,8 @@ class PluginWordle(Star):
     async def on_message(self, event: AstrMessageEvent):
         msg = event.get_message_str()
         msg = msg.lower()
-        
-        if "猜单词结束" in msg:
+
+        if "猜单词结束" in msg or "结束猜单词" in msg or "退出猜单词" in msg or "猜单词退出" in msg:
             """中止Wordle游戏"""
             session_id = event.unified_msg_origin
             if session_id not in self.game_sessions:
@@ -282,7 +282,7 @@ class PluginWordle(Star):
                 yield event.plain_result(f"猜单词已结束，正确答案是{game.answer}。")
                 del self.game_sessions[session_id]
 
-        if "猜单词提示" in msg:
+        if "猜单词提示" in msg or "提示猜单词" in msg:
             session_id = event.unified_msg_origin
             if session_id not in self.game_sessions:
                 yield event.plain_result("游戏还没开始，输入“/猜单词”来开始游戏吧！")
@@ -403,7 +403,7 @@ class PluginWordle(Star):
                     random_text = random.choice([
                     f"你要输入{length}字母的英语单词才行啊😉！",
                     f"不太对哦，要输入{length}个字母的英语单词🔡。",
-                    f"❗Error: Expected ENGLISH, and WORDLENGTH being {length} :(",
+                    f"Traceback (most recent call last):\n  File \"\<wordle\>\", line 114, in \<module\>\nSpellError: I need {length}-letter English words! :(",
                     f"需要{length}个字母长的英语单词～🔡", 
                     f"输入有问题！请输入{length}个字母长的英语单词。",
                     f"回答错误❌！应该是有{length}个字母的英语单词。",
@@ -415,9 +415,9 @@ class PluginWordle(Star):
                     return   
                     
                 elif not(
-                    msg in list(word_dict.keys())
-                    or spellcheck.known((msg,))
-                    ):
+                    msg in list(word_dict.keys())   # 在词表中是否找到用户的输入
+                    or spellcheck.known((msg,)) # 在拼写检查库中是否找到用户的输入
+                    or msg in [""]):    # 这个列表的内容可以作为拼写检查词库的补充，注意列表的内容应全为小写
                     random_text = random.choice([
                     "拼写错误😉！",
                     "拼错了哦，试试重新拼一下单词吧！",
@@ -429,8 +429,12 @@ class PluginWordle(Star):
                     random_text = random_text + "\n输入“猜单词结束”就可以结束游戏，输入“猜单词提示”可以获得提示。"
                     yield event.plain_result(random_text)
                     return
-                
-            image_result = await game.guess(msg)
+            
+            if not await game.is_guessed(msg):
+                image_result = await game.guess(msg)
+            else:
+                yield event.plain_result("这个单词已经猜过了！")
+                return
 
             if game.is_won:
                 sender_info = event.get_sender_name() if event.get_sender_name() else event.get_sender_id()
