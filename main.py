@@ -330,14 +330,18 @@ class PluginWordle(Star):
             logger.info(length)
             if length == "":
                 length = 5
-                user_length_ok = True
+                user_length_ok = True   # 比如：用户输入了/猜单词
             else:
                 try:
                     length = int(length)
-                    user_length_ok = True
+                    if length >= 1:
+                        user_length_ok = True   # 比如：用户输入了/猜单词 2
+                    else:
+                        user_length_ok = False  # 比如：用户输入了/猜单词 -3
+                        length = 5
                 except:
                     length = 5
-                    user_length_ok = False
+                    user_length_ok = False  # 比如：用户输入了/猜单词 @#&$*@
 
             """开始Wordle游戏"""
             answer = await self.get_answer(length)
