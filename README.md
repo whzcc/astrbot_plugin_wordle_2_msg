@@ -1,4 +1,4 @@
-# astrbot_plugin_wordle_2
+# astrbot_plugin_wordle_2_msg
 
 Forked from [astrbot_plugin_wordle](https://github.com/Raven95676/astrbot_plugin_wordle)
 
@@ -28,7 +28,11 @@ Astrbot wordle游戏，支持指定位数——只需要单词表中存在该长
 
 与原版相比，还优化了 “**猜单词提示**”的功能。现在用户获取提示时，如果一个正确字母都没有猜出来，插件会告诉其随机位置上的字母；如果猜出了部分字母，则插件会告知其顺序。
 
+原版似乎有一个无法向QQ平台发图片的Bug（可能是因为试图png格式），这个项目换用jpg，解决了这个Bug。
+
 增加了**随机提示词**。
+
+添加了**防重复猜测**功能。
 
 优化了一些细节。
 
