@@ -9,15 +9,14 @@ from PIL import ImageDraw, ImageFont
 from astrbot.api.all import *
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-
-try:
-    os.system("pip install pyspellchecker")
-    logger.log("Wordle已尝试安装pyspellchecker库")
-except:
-    logger.warning("Wordle未自动安装pyspellchecker库")
-    logger.warning("这可能导致拼写检查的失败，请手动在AstrBot目录中requirements.txt添加一行“pyspellchecker”，如已安装请忽略")
+import re
 
 from spellchecker import SpellChecker
+
+def re_spell_check(word: str, re_word_list: list):  # 支持正则表达式的自定义单词检查
+    for each_word in re_word_list:
+        if re.search(f'{each_word}',word):
+            return True
 
 class WordleGame:
     def __init__(self, answer: str):
@@ -221,13 +220,19 @@ class WordleGame:
     "astrbot_plugin_wordle_2_msg",
     "Raven95676, whzc",
     "Wordle游戏（响应消息内容版），支持指定位数",
-    "2.1.1",
+    "2.2.1",
     "https://github.com/whzcc/astrbot_plugin_wordle_2_msg",
 )
+
 class PluginWordle(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: dict):
         super().__init__(context)
         self.game_sessions: dict[str, WordleGame] = {}
+        # 加载配置文件
+        self.config = config
+        
+        # 自定义拼写检查
+        self.custom_word_list = self.config.get("custom_word_list", "").split(";")
 
     @staticmethod
     async def get_answer(length):
@@ -383,7 +388,7 @@ class PluginWordle(Star):
                 return
             
             else:
-                
+
                 length = game.length
                 spellcheck = SpellChecker()
 
@@ -421,7 +426,8 @@ class PluginWordle(Star):
                 elif not(
                     msg in list(word_dict.keys())   # 在词表中是否找到用户的输入
                     or spellcheck.known((msg,)) # 在拼写检查库中是否找到用户的输入
-                    or msg in [""]):    # 这个列表的内容可以作为拼写检查词库的补充，注意列表的内容应全为小写
+                    or (re_spell_check(msg,self.custom_word_list))
+                    ):
                     random_text = random.choice([
                     "拼写错误😉！",
                     "拼错了哦，试试重新拼一下单词吧！",
