@@ -2,6 +2,8 @@
 
 Forked from [astrbot_plugin_wordle](https://github.com/Raven95676/astrbot_plugin_wordle)
 
+2.2.1：支持配置自定义拼写检查（支持正则表达式）
+
 > [!caution]
 > **这个版本识别的不是指令，而是普通的对话。也就是说，你必须在配置 AstrBot 时，移除指令前缀“/”**。
 > 
