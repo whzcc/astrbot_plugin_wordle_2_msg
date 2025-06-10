@@ -11,6 +11,11 @@ from astrbot.api.event import AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 import re
 
+try:
+    os.system("python -m pip install pyspellchecker")    # 过去的版本中，通过requirements.txt的安装方式可能出现异常
+except:
+    logger.info("Pyspellchecker not installed this time.")
+    
 from spellchecker import SpellChecker
 
 def re_spell_check(word: str, re_word_list: list):  # 支持正则表达式的自定义单词检查
